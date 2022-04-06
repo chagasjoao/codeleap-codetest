@@ -1,101 +1,323 @@
-import React from "react";
-import { FiTrash2, FiEdit } from "react-icons/fi";
-import { Container, Form, Post, Header } from "./styles";
+import React, { useEffect, useState } from "react";
+import ReactLoading from "react-loading";
+
+import Modal from "react-modal";
+
+import { Formik } from "formik";
+import * as Yup from "yup";
+
+import { toast } from "react-toastify";
+
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
+
+import {
+  Container,
+  InsertForm,
+  EditForm,
+  Post,
+  Header,
+  LoadingContainer,
+  DeleteIcon,
+  EditIcon,
+  IconButton,
+} from "./styles";
+import Button from "../../components/Button";
+import { RootState } from "../../redux/store";
+
+import api from "../../services/api";
+
+interface Post {
+  id: number;
+  username: string;
+  created_datetime: Date;
+  title: string;
+  content: string;
+}
+
+interface Response {
+  count: number;
+  results: Post[];
+}
 
 function Posts() {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editInfo, setEditInfo] = useState<Post>();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const { user } = useSelector((state: RootState) => state);
+  const navigate = useNavigate();
+
+  const modalStyle = {
+    content: {
+      top: "50%",
+      left: "50%",
+      right: "auto",
+      bottom: "auto",
+      marginRight: "-50%",
+      transform: "translate(-50%, -50%)",
+    },
+    overlay: {
+      background: "#777777CC",
+    },
+  };
+
+  useEffect(() => {
+    if (!user.userName) {
+      navigate("/");
+    }
+
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    async function getPosts() {
+      const response = await api.get<Response>("/careers/");
+
+      setPosts(response.data.results);
+    }
+
+    getPosts();
+  }, []);
+
+  const postValidation = Yup.object({
+    title: Yup.string().required(),
+    content: Yup.string().required(),
+  });
+
+  function timeAfterCreated(postDate: Date) {
+    const now = new Date();
+    const formatedPostDate = new Date(postDate);
+
+    const differenceBetweenDates = Math.abs(
+      now.getTime() + now.getTimezoneOffset() - formatedPostDate.getTime()
+    );
+
+    const days = Math.ceil(differenceBetweenDates / (1000 * 60 * 60 * 24));
+    const hours = Math.ceil(differenceBetweenDates / (1000 * 60 * 60));
+    const minutes = Math.ceil(differenceBetweenDates / (1000 * 60));
+
+    if (minutes < 59) {
+      if (minutes === 1) {
+        return "Less than a minute";
+      }
+      return `${minutes} minutes ago`;
+    }
+
+    if (hours < 23) {
+      return `${hours} hours ago`;
+    }
+
+    return `${days} days ago`;
+  }
+
+  function handleDeletePost(id: number) {
+    confirmAlert({
+      title: "Attention!",
+      message: "Are you sure you want to delete this item?",
+      buttons: [
+        {
+          label: "Ok",
+          onClick: async () => {
+            await api.delete(`/careers/${id}/`);
+
+            const response = await api.get<Response>("/careers/");
+
+            toast("Post deleted!", {
+              type: "warning",
+            });
+
+            setPosts(response.data.results);
+          },
+        },
+        {
+          label: "Cancel",
+          onClick: () => {
+            return null;
+          },
+        },
+      ],
+    });
+  }
+
   return (
     <Container>
-      <Header>CodeLeap Network</Header>
+      {isLoading ? (
+        <LoadingContainer>
+          <ReactLoading type="spin" color="#000" />
+        </LoadingContainer>
+      ) : (
+        <>
+          <Header>CodeLeap Network</Header>
 
-      <Form>
-        <h1>What&apos;s on your mind?</h1>
-        <p>Title</p>
-        <input placeholder="Hello world" type="text" />
+          <Formik
+            initialValues={{ title: "", content: "" }}
+            validationSchema={postValidation}
+            onSubmit={async (
+              { title, content },
+              { setSubmitting, resetForm }
+            ) => {
+              const post = {
+                username: user.userName,
+                title,
+                content,
+              };
 
-        <p>Content</p>
-        <textarea placeholder="Content here..." />
-      </Form>
+              await api.post("/careers/", post);
 
-      <Post>
-        <header>
-          <h1>My First Post at Codelap Network!</h1>
+              const response = await api.get<Response>("/careers/");
 
-          <FiTrash2 size={28} />
-          <FiEdit size={28} />
-        </header>
+              toast("Post created successfully!", {
+                type: "success",
+              });
 
-        <div>
-          <span>@Victor</span>
-          <span>25 minutes ago</span>
-        </div>
+              setPosts(response.data.results);
 
-        <p>
-          Curabitur suscipit suscipit tellus. Phasellus consectetuer vestibulum
-          elit. Pellentesque habitant morbi tristique senectus et netus et
-          malesuada fames ac turpis egestas. Maecenas egestas arcu quis ligula
-          mattis placerat.
-          <br />
-          <br />
-          Duis vel nibh at velit scelerisque suscipit. Duis lobortis massa
-          imperdiet quam. Aenean posuere, tortor sed cursus feugiat, nunc augue
-          blandit nunc, eu sollicitudin urna dolor sagittis lacus. Fusce a quam.
-          Nullam vel sem. Nullam cursus lacinia erat.
-        </p>
-      </Post>
+              setSubmitting(false);
+              resetForm({
+                values: {
+                  title: "",
+                  content: "",
+                },
+              });
+            }}
+          >
+            {({ handleSubmit, values, handleChange }) => (
+              <InsertForm onSubmit={handleSubmit}>
+                <h1>What&apos;s on your mind?</h1>
+                <span>@{user.userName}</span>
 
-      <Post>
-        <header>
-          <h1>My First Post at Codelap Network!</h1>
+                <label htmlFor="title">Title</label>
+                <input
+                  id="title"
+                  placeholder="Hello world"
+                  type="text"
+                  value={values.title}
+                  onChange={handleChange}
+                />
 
-          <FiTrash2 size={28} />
-          <FiEdit size={28} />
-        </header>
+                <label htmlFor="content">Content</label>
+                <textarea
+                  id="content"
+                  value={values.content}
+                  placeholder="Content here..."
+                  onChange={handleChange}
+                />
 
-        <div>
-          <span>@Victor</span>
-          <span>25 minutes ago</span>
-        </div>
+                <Button
+                  type="submit"
+                  disabled={!values.title || !values.content}
+                >
+                  Create
+                </Button>
+              </InsertForm>
+            )}
+          </Formik>
 
-        <p>
-          Curabitur suscipit suscipit tellus. Phasellus consectetuer vestibulum
-          elit. Pellentesque habitant morbi tristique senectus et netus et
-          malesuada fames ac turpis egestas. Maecenas egestas arcu quis ligula
-          mattis placerat.
-          <br />
-          <br />
-          Duis vel nibh at velit scelerisque suscipit. Duis lobortis massa
-          imperdiet quam. Aenean posuere, tortor sed cursus feugiat, nunc augue
-          blandit nunc, eu sollicitudin urna dolor sagittis lacus. Fusce a quam.
-          Nullam vel sem. Nullam cursus lacinia erat.
-        </p>
-      </Post>
+          <Modal
+            isOpen={isOpen}
+            style={modalStyle}
+            onRequestClose={() => {
+              setIsOpen(false);
+              setEditInfo(undefined);
+            }}
+            contentLabel="Example Modal"
+          >
+            <Formik
+              initialValues={{
+                title: editInfo?.title,
+                content: editInfo?.content,
+              }}
+              validationSchema={postValidation}
+              onSubmit={async ({ title, content }, { setSubmitting }) => {
+                const data = {
+                  title,
+                  content,
+                };
 
-      <Post>
-        <header>
-          <h1>My First Post at Codelap Network!</h1>
+                await api.patch(`/careers/${editInfo?.id}/`, data);
 
-          <FiTrash2 size={28} />
-          <FiEdit size={28} />
-        </header>
+                const response = await api.get<Response>("/careers/");
 
-        <div>
-          <span>@Victor</span>
-          <span>25 minutes ago</span>
-        </div>
+                toast("Post edited successfully!", {
+                  type: "info",
+                });
 
-        <p>
-          Curabitur suscipit suscipit tellus. Phasellus consectetuer vestibulum
-          elit. Pellentesque habitant morbi tristique senectus et netus et
-          malesuada fames ac turpis egestas. Maecenas egestas arcu quis ligula
-          mattis placerat.
-          <br />
-          <br />
-          Duis vel nibh at velit scelerisque suscipit. Duis lobortis massa
-          imperdiet quam. Aenean posuere, tortor sed cursus feugiat, nunc augue
-          blandit nunc, eu sollicitudin urna dolor sagittis lacus. Fusce a quam.
-          Nullam vel sem. Nullam cursus lacinia erat.
-        </p>
-      </Post>
+                setPosts(response.data.results);
+
+                setSubmitting(false);
+                setIsOpen(false);
+                setEditInfo(undefined);
+              }}
+            >
+              {({ handleSubmit, values, handleChange }) => (
+                <EditForm onSubmit={handleSubmit}>
+                  <h1>Edit item</h1>
+                  <span>@{user.userName}</span>
+
+                  <label htmlFor="title">Title</label>
+                  <input
+                    id="title"
+                    placeholder="Hello world"
+                    type="text"
+                    value={values.title}
+                    onChange={handleChange}
+                  />
+
+                  <label htmlFor="content">Content</label>
+                  <textarea
+                    id="content"
+                    value={values.content}
+                    placeholder="Content here..."
+                    onChange={handleChange}
+                  />
+
+                  <Button
+                    type="submit"
+                    disabled={!values.title || !values.content}
+                  >
+                    Save
+                  </Button>
+                </EditForm>
+              )}
+            </Formik>
+          </Modal>
+
+          {posts.map((post) => (
+            <Post key={post.id}>
+              <header>
+                <h1>{post.title}</h1>
+
+                {post.username === user.userName && (
+                  <>
+                    <IconButton onClick={() => handleDeletePost(post.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => {
+                        setIsOpen(true);
+                        setEditInfo(post);
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </>
+                )}
+              </header>
+
+              <div>
+                <span>@{post.username}</span>
+                <span>{timeAfterCreated(post.created_datetime)}</span>
+              </div>
+
+              <p>{post.content}</p>
+            </Post>
+          ))}
+        </>
+      )}
     </Container>
   );
 }
