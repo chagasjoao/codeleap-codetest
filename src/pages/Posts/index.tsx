@@ -28,7 +28,7 @@ import {
 import Button from "../../components/Button";
 import { RootState } from "../../redux/store";
 
-import api from "../../services/api";
+import api from "../../actions/api";
 
 interface Post {
   id: number;
@@ -68,12 +68,9 @@ function Posts() {
   useEffect(() => {
     if (!user.userName) {
       navigate("/");
+      return;
     }
 
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
     async function getPosts() {
       const response = await api.get<Response>("/careers/");
 
@@ -81,6 +78,8 @@ function Posts() {
     }
 
     getPosts();
+
+    setIsLoading(false);
   }, []);
 
   const postValidation = Yup.object({
@@ -93,9 +92,10 @@ function Posts() {
     const formatedPostDate = new Date(postDate);
 
     const differenceBetweenDates = Math.abs(
-      now.getTime() + now.getTimezoneOffset() - formatedPostDate.getTime()
+      now.getTime() - formatedPostDate.getTime()
     );
 
+    // (miliseconds, seconds, minutes, hours)
     const days = Math.ceil(differenceBetweenDates / (1000 * 60 * 60 * 24));
     const hours = Math.ceil(differenceBetweenDates / (1000 * 60 * 60));
     const minutes = Math.ceil(differenceBetweenDates / (1000 * 60));
@@ -114,6 +114,12 @@ function Posts() {
     return `${days} days ago`;
   }
 
+  async function handleUpdatePost() {
+    const response = await api.get<Response>("/careers/");
+
+    setPosts(response.data.results);
+  }
+
   function handleDeletePost(id: number) {
     confirmAlert({
       title: "Attention!",
@@ -124,13 +130,11 @@ function Posts() {
           onClick: async () => {
             await api.delete(`/careers/${id}/`);
 
-            const response = await api.get<Response>("/careers/");
+            handleUpdatePost();
 
             toast("Post deleted!", {
               type: "warning",
             });
-
-            setPosts(response.data.results);
           },
         },
         {
@@ -168,13 +172,11 @@ function Posts() {
 
               await api.post("/careers/", post);
 
-              const response = await api.get<Response>("/careers/");
+              handleUpdatePost();
 
               toast("Post created successfully!", {
                 type: "success",
               });
-
-              setPosts(response.data.results);
 
               setSubmitting(false);
               resetForm({
@@ -240,13 +242,11 @@ function Posts() {
 
                 await api.patch(`/careers/${editInfo?.id}/`, data);
 
-                const response = await api.get<Response>("/careers/");
+                handleUpdatePost();
 
                 toast("Post edited successfully!", {
                   type: "info",
                 });
-
-                setPosts(response.data.results);
 
                 setSubmitting(false);
                 setIsOpen(false);
