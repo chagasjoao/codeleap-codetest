@@ -150,7 +150,7 @@ export const Post = styled.div`
   border: 1px solid #999;
 
   header {
-    width: 100%;
+    max-width: 100%;
     background: #000;
     display: flex;
     align-items: center;
@@ -158,6 +158,8 @@ export const Post = styled.div`
     padding: 24px 28px;
 
     h1 {
+      max-width: 70%;
+      word-wrap: break-word;
       flex: 1;
       font-size: 22px;
       color: #fff;
@@ -180,6 +182,7 @@ export const Post = styled.div`
     padding: 0px 28px 28px 28px;
     font-size: 18px;
     margin-top: 20px;
+    word-wrap: break-word;
   }
 `;
 

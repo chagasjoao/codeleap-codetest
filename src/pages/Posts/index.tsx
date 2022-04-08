@@ -292,7 +292,7 @@ function Posts() {
                 <h1>{post.title}</h1>
 
                 {post.username === user.userName && (
-                  <>
+                  <div>
                     <IconButton onClick={() => handleDeletePost(post.id)}>
                       <DeleteIcon />
                     </IconButton>
@@ -304,7 +304,7 @@ function Posts() {
                     >
                       <EditIcon />
                     </IconButton>
-                  </>
+                  </div>
                 )}
               </header>
 
