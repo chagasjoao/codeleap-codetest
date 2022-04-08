@@ -45,6 +45,7 @@ interface Response {
 
 function Posts() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState(false);
   const [editInfo, setEditInfo] = useState<Post>();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -115,9 +116,11 @@ function Posts() {
   }
 
   async function handleUpdatePost() {
+    setIsUpdating(true);
     const response = await api.get<Response>("/careers/");
 
     setPosts(response.data.results);
+    setIsUpdating(false);
   }
 
   function handleDeletePost(id: number) {
@@ -286,36 +289,42 @@ function Posts() {
             </Formik>
           </Modal>
 
-          {posts.map((post) => (
-            <Post key={post.id}>
-              <header>
-                <h1>{post.title}</h1>
+          {isUpdating ? (
+            <LoadingContainer>
+              <ReactLoading type="spin" color="#000" />
+            </LoadingContainer>
+          ) : (
+            posts.map((post) => (
+              <Post key={post.id}>
+                <header>
+                  <h1>{post.title}</h1>
 
-                {post.username === user.userName && (
-                  <div>
-                    <IconButton onClick={() => handleDeletePost(post.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => {
-                        setIsOpen(true);
-                        setEditInfo(post);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </div>
-                )}
-              </header>
+                  {post.username === user.userName && (
+                    <div>
+                      <IconButton onClick={() => handleDeletePost(post.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => {
+                          setIsOpen(true);
+                          setEditInfo(post);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </div>
+                  )}
+                </header>
 
-              <div>
-                <span>@{post.username}</span>
-                <span>{timeAfterCreated(post.created_datetime)}</span>
-              </div>
+                <div>
+                  <span>@{post.username}</span>
+                  <span>{timeAfterCreated(post.created_datetime)}</span>
+                </div>
 
-              <p>{post.content}</p>
-            </Post>
-          ))}
+                <p>{post.content}</p>
+              </Post>
+            ))
+          )}
         </>
       )}
     </Container>

@@ -188,7 +188,7 @@ export const Post = styled.div`
 
 export const LoadingContainer = styled.div`
   display: flex;
-  min-height: 100vh;
+  min-height: 50vh;
   align-items: center;
   justify-content: center;
 `;
