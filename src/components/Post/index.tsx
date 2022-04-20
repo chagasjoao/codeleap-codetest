@@ -67,9 +67,7 @@ export default function PostsComponent(props: Props) {
         {
           label: "Ok",
           onClick: async () => {
-            await api.delete(`/careers/${id}/`);
-
-            handleUpdatePost();
+            await api.delete(`/careers/${id}/`).then(() => handleUpdatePost());
 
             toast("Post deleted!", {
               type: "warning",
@@ -113,9 +111,9 @@ export default function PostsComponent(props: Props) {
               content,
             };
 
-            await api.patch(`/careers/${post.id}/`, data);
-
-            handleUpdatePost();
+            await api
+              .patch(`/careers/${post.id}/`, data)
+              .then(() => handleUpdatePost());
 
             toast("Post edited successfully!", {
               type: "info",
