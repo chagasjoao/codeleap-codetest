@@ -15,7 +15,7 @@ import Post from "../../components/Post";
 import { RootState } from "../../redux/store";
 import { postList } from "../../redux/postSlice";
 
-import { IPost, Response } from "../../interfaces/interfaces";
+import { Response } from "../../interfaces/interfaces";
 
 import api from "../../actions/api";
 
@@ -135,9 +135,7 @@ function Posts() {
               <ReactLoading type="spin" color="#000" />
             </LoadingContainer>
           ) : (
-            postsData.posts.map((post: IPost) => (
-              <Post key={post.id} post={post} />
-            ))
+            postsData.posts.map((post) => <Post key={post.id} post={post} />)
           )}
         </>
       )}

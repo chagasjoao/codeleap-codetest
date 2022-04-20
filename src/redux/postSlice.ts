@@ -1,17 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-
-interface Post {
-  id: number;
-  username: string;
-  created_datetime: Date;
-  title: string;
-  content: string;
-}
+import { IPost } from "../interfaces/interfaces";
 
 export const slice = createSlice({
   name: "post",
   initialState: {
-    posts: [],
+    posts: [] as IPost[],
   },
   reducers: {
     postList(state, { payload }) {
@@ -22,6 +15,6 @@ export const slice = createSlice({
 
 export const { postList } = slice.actions;
 
-export const selectUser = (state: Post[]) => state;
+export const selectPost = (state: IPost[]) => state;
 
 export default slice.reducer;
